@@ -1,0 +1,45 @@
+services:
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:10
+    container_name: forgejo
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - FORGEJO__database__DB_TYPE=postgres
+      - FORGEJO__database__HOST=${DB_HOST}
+      - FORGEJO__database__NAME=${DB_NAME}
+      - FORGEJO__database__USER=${DB_USER}
+      - FORGEJO__database__PASSWORD=${DB_PASSWORD}
+    restart: unless-stopped
+    networks:
+      - forgejo_network
+      - services_network
+    volumes:
+      - ${FORGEJO_PATH}:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    expose:
+      - "3000"
+      - "22"
+    depends_on:
+      - forgejo_db
+
+  forgejo_db:
+    image: postgres:16-alpine
+    container_name: forgejo_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    networks:
+      - forgejo_network
+    volumes:
+      - ${DATA_PATH}:/var/lib/postgresql/data
+
+networks:
+  forgejo_network:
+    name: forgejo_network
+    driver: bridge
+  services_network:
+    external: true
